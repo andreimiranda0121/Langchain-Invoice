@@ -65,6 +65,7 @@ class FilePipeline:
         df = pd.DataFrame(
             {
                 "invoice_no": pd.Series(dtype="str"),
+                "po_no": pd.Series(dtype="str"),
                 "description": pd.Series(dtype="str"),
                 "quantity": pd.Series(dtype="str"),  # 🔹 Keep as string to prevent conversion errors
                 "date": pd.Series(dtype="str"),
@@ -117,6 +118,7 @@ class FilePipeline:
                 try:
                     standardized_entry = {
                         "invoice_no": entry_dict.get("invoice_no", ""),
+                        "po_no": entry_dict.get("po_no", ""),
                         "description": entry_dict.get("description", ""),
                         "quantity": str(entry_dict.get("quantity", "0")), 
                         "date": entry_dict.get("date", ""),

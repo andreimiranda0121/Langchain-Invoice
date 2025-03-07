@@ -4,6 +4,7 @@ from typing import List, Optional
 
 class InvoiceItem(BaseModel):
     invoice_no: str = Field(..., description="The invoice number or confirmation number")
+    po_no: str = Field(..., description="PO/Purchase Order number")
     description: str = Field(..., description="Item description")
     quantity: str = Field(..., description="Number of items")
     date: str = Field(..., description="Invoice date in YYYY-MM-DD format")
