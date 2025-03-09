@@ -1,15 +1,15 @@
-from fastapi import FastAPI, File, UploadFile, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from typing import List
 from pydantic import BaseModel, Field
-from src.utils import FilePipeline
+from src.services.file_processing import FilePipeline
 
-app = FastAPI()
+router = APIRouter()
 
 class FileUploadRequest(BaseModel):
-    invoice_files: List[str] = Field(..., description="List of invoice filenames")
-    po_files: List[str] = Field(..., description="List of PO filenames")
+    invoice_files: List[str] = Field(..., description="List of expected invoice filenames")
+    po_files: List[str] = Field(..., description="List of expected PO filenames")
 
-@app.post("/upload_files/")
+@router.post("/upload_files/")
 async def upload_files(
     invoices: List[UploadFile] = File(...),
     pos: List[UploadFile] = File(...),
@@ -37,3 +37,7 @@ async def upload_files(
         "invoices": invoices_response,
         "pos": pos_response
     }
+
+@router.post("/chat/")
+async def chat():
+    pass

@@ -4,9 +4,8 @@ import re
 import json
 import xml.etree.ElementTree as ET
 from pypdf import PdfReader
-from src.chain import Chaining
+from backend.services import Chaining
 from PIL import Image
-import pytesseract
 
 
 class FilePipeline:
@@ -34,7 +33,7 @@ class FilePipeline:
 
     def extract_text_from_image(self, file_bytes):
         image = Image.open(io.BytesIO(file_bytes))
-        text = pytesseract.pytesseract.image_to_string(image)
+        text = image
         return text
 
     def clean_number(self, value):
