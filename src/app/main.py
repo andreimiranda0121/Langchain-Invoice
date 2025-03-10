@@ -1,12 +1,29 @@
+import sys
+import os
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.insert(0, BASE_DIR)
+
 import streamlit as st
-from validation import validation_page
-from chatbot import chatbot_page
+from pages.validation import validation_page
+from pages.chatbot import chatbot_page
+from pages.extraction import extract_page
+
+
 
 st.set_page_config(page_title="Invoice and PO Extraction Bot", layout="wide")
 
+# Hide Streamlit's default page selector
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] {display: none;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # Sidebar Branding
-#st.sidebar.image("logo.png", use_column_width=True)  # Optional: Add a logo
-st.sidebar.markdown("## 🌟 **Welcome!**")
+st.sidebar.markdown("**Welcome**")
 st.sidebar.markdown("---")
 
 # Initialize session state for active selection
@@ -24,17 +41,20 @@ def nav_button(label, key):
         st.rerun()  # Refresh page when button is clicked
 
 # Navigation Buttons
+nav_button("Extraction", "extraction")
 nav_button("Validation", "validation")
 nav_button("Chatbot", "chatbot")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("🔗 **Resources & Support:**")
+st.sidebar.markdown("**Resources & Support:**")
 st.sidebar.markdown("[📖 Documentation](https://docs.example.com)")
-st.sidebar.markdown("[💡 Report an Issue](https://github.com/example/issues)")
+st.sidebar.markdown("[🔗 Github Link](https://github.com/andreimiranda0121/Langchain-Invoice)")
 st.sidebar.markdown("📞 **Contact:** support@example.com")
 
 # Load the selected page
-if st.session_state.selected_page == "Validation":
+if st.session_state.selected_page == "Extraction":
+    extract_page()
+elif st.session_state.selected_page == "Validation":
     validation_page()
 elif st.session_state.selected_page == "Chatbot":
     chatbot_page()

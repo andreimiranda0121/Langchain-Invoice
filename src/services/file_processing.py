@@ -4,7 +4,7 @@ import re
 import json
 import xml.etree.ElementTree as ET
 from pypdf import PdfReader
-from backend.services import Chaining
+from .chain import Chaining
 from PIL import Image
 
 

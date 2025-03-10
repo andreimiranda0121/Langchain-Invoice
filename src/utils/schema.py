@@ -2,9 +2,11 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+
+#Use to create an list of invoice for multiple rows and columnns in the extract PDF
 class InvoiceItem(BaseModel):
     invoice_no: str = Field(..., description="The invoice number or confirmation number")
-    po_no: str = Field(..., description="PO/Purchase Order number")
+    po_no: str = Field(..., description="PO/Purchase Order number get number only")
     description: str = Field(..., description="Item description")
     quantity: str = Field(..., description="Number of items")
     date: str = Field(..., description="Invoice date in YYYY-MM-DD format")

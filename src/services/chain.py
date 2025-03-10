@@ -1,6 +1,6 @@
-from langchain_google_genai import GoogleGenerativeAI
-from .schema import Schema
-from .template import Template
+from langchain_google_genai import GoogleGenerativeAI, ChatGoogleGenerativeAI
+from src.utils.schema import Schema
+from src.utils.template import Template
 from dotenv import load_dotenv
 
 class Chaining():
@@ -8,9 +8,12 @@ class Chaining():
         load_dotenv()
         self.template = Template()
         self.schema = Schema()
-        self.model = GoogleGenerativeAI(
+        self.extract_model = GoogleGenerativeAI(
             model="gemini-2.0-flash",
             temperature=0.3
+        )
+        self.chat_model = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash"
         )
 
     def estimate_tokens(self, text):
@@ -20,7 +23,7 @@ class Chaining():
     def response(self, file_data):
         parser = self.schema.create_schema()
         template = self.template.extract_template()
-        chain = template | self.model | parser
+        chain = template | self.extract_model | parser
 
         formatted_prompt = template.format(data=file_data, format_instructions=parser.get_format_instructions())
         input_tokens = self.estimate_tokens(formatted_prompt)
@@ -36,3 +39,11 @@ class Chaining():
         print(response)
 
         return response
+
+    def chat_response(self,query):
+
+        template = self.template.chat_template()
+        chain = template | self.chat_model
+        response = chain.invoke({"query":query})
+
+        return response.content

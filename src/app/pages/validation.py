@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from services.api_requests import upload_files  # Import API request function
-from utils.helpers import hash_file  # Import file hashing function
+from src.utils.helpers import hash_file
+from src.services.api_requests import upload_files
 
 def validation_page():
     st.title("Invoice and PO Extraction")
@@ -16,8 +16,10 @@ def validation_page():
     if "df_pos" not in st.session_state:
         st.session_state.df_pos = pd.DataFrame()  
 
-    col1, col2 = st.columns(2)
+    company_list = ["Company A", "Company B", "Company C"]
+    st.selectbox(label="List of Company",options=company_list, key="company")
     
+    col1, col2 = st.columns(2)
     with col1:
         uploaded_files = st.file_uploader(
             "Upload invoices (PDF, XML, PNG, JPEG)", 
@@ -64,6 +66,8 @@ def validation_page():
             response = upload_files(new_files, po_new_files, file_data)  # API call
 
             if response and "invoices" in response and "pos" in response:
+                print(type(response["invoices"]))
+                print(type(response["pos"]))
                 df_invoices = pd.DataFrame(response["invoices"])
                 df_pos = pd.DataFrame(response["pos"])
 
@@ -99,13 +103,14 @@ def validation_page():
         with st.expander("View Extracted Invoice Data"):
             st.dataframe(st.session_state.df_invoices, use_container_width=True)
 
+    if not st.session_state.df_invoices.empty:
+        data_as_csv = st.session_state.df_invoices.to_csv(index=False).encode("utf-8")
+        st.download_button("Download Invoices as CSV", data_as_csv, "extracted_invoices.csv", "text/csv")
+
     if not st.session_state.df_pos.empty:
         with st.expander("View Extracted PO Data"):
             st.dataframe(st.session_state.df_pos, use_container_width=True)
 
-    if not st.session_state.df_invoices.empty:
-        data_as_csv = st.session_state.df_invoices.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Invoices as CSV", data_as_csv, "extracted_invoices.csv", "text/csv")
 
     if not st.session_state.df_pos.empty:
         po_data_as_csv = st.session_state.df_pos.to_csv(index=False).encode("utf-8")

@@ -1,5 +1,5 @@
 import streamlit as st
-#from services.api_requests import query_chatbot
+from src.services.api_requests import chat_request
 
 def chatbot_page():
     st.title("Invoice Chatbot")
@@ -26,8 +26,9 @@ def chatbot_page():
 
         with st.spinner("Generating Response"):
             #Input the post request for the response
+            response = chat_request(user_input,st.session_state.session_id)
             with st.chat_message("assistant"):
-                st.markdown("hello")
+                st.markdown(response)
 
 
-            st.session_state.messages.append({"role": "assistant", "content": "hello"})
+            st.session_state.messages.append({"role": "assistant", "content": response})

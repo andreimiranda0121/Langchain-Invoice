@@ -1,13 +1,10 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, Depends
 from typing import List
-from pydantic import BaseModel, Field
 from src.services.file_processing import FilePipeline
+from src.services.chain import Chaining
+from .models import FileUploadRequest, ChatRequest
 
 router = APIRouter()
-
-class FileUploadRequest(BaseModel):
-    invoice_files: List[str] = Field(..., description="List of expected invoice filenames")
-    po_files: List[str] = Field(..., description="List of expected PO filenames")
 
 @router.post("/upload_files/")
 async def upload_files(
@@ -39,5 +36,8 @@ async def upload_files(
     }
 
 @router.post("/chat/")
-async def chat():
-    pass
+async def chat(request: ChatRequest):
+    ch = Chaining()
+    response = ch.chat_response(request.query)
+    print(request.session_id)
+    return response

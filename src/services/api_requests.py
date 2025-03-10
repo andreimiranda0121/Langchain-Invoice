@@ -24,3 +24,24 @@ def upload_files(new_files, po_new_files,file_data):
             return None
     except Exception as e:
         return None
+
+def chat_request(query,session_id):
+    try:
+        API_URL = os.getenv("API_URL")
+
+        response = requests.post(f"{API_URL}/chat/", 
+                                 json={
+                                     "query": query,
+                                     "session_id": session_id
+                                 }
+                                 )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return None
+    except Exception as e:
+        return None
+    
+
+def save_to_db():
+    pass

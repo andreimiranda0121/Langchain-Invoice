@@ -21,3 +21,11 @@ class Template():
             {data}
             """
         )
+    
+    def chat_template(self):
+        return ChatPromptTemplate.from_messages(
+            [
+                ("system", """Youre an Intelligent chatbot that answers users query based on the """),
+                ("human", "{query}")
+            ]
+        )
