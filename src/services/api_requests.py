@@ -43,5 +43,18 @@ def chat_request(query,session_id):
         return None
     
 
-def save_to_db():
-    pass
+def save_to_db(df_invoices, df_pos):
+    try:
+        API_URL = os.getenv("API_URL")
+        data = {
+            "invoices": df_invoices.to_dict(orient="records"),
+            "pos": df_pos.to_dict(orient="records")
+        }
+        response = requests.post(f"{API_URL}/save_to_db/", json=data)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Failed to save data"}
+    except Exception as e:
+        return {"error": str(e)}

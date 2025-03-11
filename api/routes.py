@@ -2,7 +2,8 @@ from fastapi import APIRouter, File, UploadFile, Depends
 from typing import List
 from src.services.file_processing import FilePipeline
 from src.services.chain import Chaining
-from .models import FileUploadRequest, ChatRequest
+from .models import FileUploadRequest, ChatRequest,SaveRequest
+from src.database.vector_store import VectorStore
 
 router = APIRouter()
 
@@ -41,3 +42,19 @@ async def chat(request: ChatRequest):
     response = ch.chat_response(request.query)
     print(request.session_id)
     return response
+
+@router.post("/save_to_db/")
+async def save_to_db(data: SaveRequest):
+    vector_store = VectorStore()  # Initialize vector store
+
+    result = vector_store.create_vector_store(data.invoices, data.pos)
+
+    return {  
+        "message": "Data processed",
+        "new_vectorized_invoices": result["new_invoices"],
+        "duplicate_invoices": result["duplicate_invoices"]["count"],
+        "duplicate_invoice_files": result["duplicate_invoices"]["filenames"],
+        "new_vectorized_pos": result["new_pos"],
+        "duplicate_pos": result["duplicate_pos"]["count"],
+        "duplicate_pos_files": result["duplicate_pos"]["filenames"],
+    }

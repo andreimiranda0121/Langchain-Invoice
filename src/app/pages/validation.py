@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from src.utils.helpers import hash_file
 from src.services.api_requests import upload_files
+from src.services.api_requests import save_to_db
 
 def validation_page():
     st.title("Invoice and PO Extraction")
@@ -118,5 +119,33 @@ def validation_page():
 
     save = st.button(label="Save")
 
+    
     if save:
-        st.write("test test")
+        if st.session_state.df_invoices.empty and st.session_state.df_pos.empty:
+            st.warning("No data to save!")
+        else:
+            response = save_to_db(st.session_state.df_invoices, st.session_state.df_pos)
+            if "error" in response:
+                st.error(response["error"])
+            else:
+                st.success(f"✅ {response['new_vectorized_invoices']} invoices saved, {response['new_vectorized_pos']} POs saved")
+
+                # Show warnings if duplicates exist
+                if response["duplicate_invoices"] > 0 or response["duplicate_pos"] > 0:
+                    st.warning(
+                        f"⚠️ {response['duplicate_invoices']} invoices and {response['duplicate_pos']} POs were duplicates and not saved."
+                    )
+
+                    # Display filenames of duplicate invoices
+                    if response["duplicate_invoice_files"]:
+                        st.write("📝 **Duplicate Invoice Files:**")
+                        for filename in response["duplicate_invoice_files"]:
+                            st.write(f"- {filename}")
+
+                    # Display filenames of duplicate POs
+                    if response["duplicate_pos_files"]:
+                        st.write("📌 **Duplicate PO Files:**")
+                        for filename in response["duplicate_pos_files"]:
+                            st.write(f"- {filename}")
+
+

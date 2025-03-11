@@ -8,8 +8,7 @@ import streamlit as st
 from pages.validation import validation_page
 from pages.chatbot import chatbot_page
 from pages.extraction import extract_page
-
-
+from src.database.vector_store import VectorStore
 
 st.set_page_config(page_title="Invoice and PO Extraction Bot", layout="wide")
 
@@ -58,3 +57,4 @@ elif st.session_state.selected_page == "Validation":
     validation_page()
 elif st.session_state.selected_page == "Chatbot":
     chatbot_page()
+

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List,Dict, Any
 
 
 class FileUploadRequest(BaseModel):
@@ -9,3 +9,9 @@ class FileUploadRequest(BaseModel):
 class ChatRequest(BaseModel):
     query: str
     session_id: str
+
+class SaveRequest(BaseModel):
+    invoices: List[Dict[str, Any]]
+    pos: List[Dict[str, Any]]
+
+

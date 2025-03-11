@@ -20,3 +20,4 @@ requests
 langchain-huggingface
 transformers
 pypdf
+pymongo

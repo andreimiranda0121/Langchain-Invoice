@@ -2,6 +2,7 @@ from langchain_google_genai import GoogleGenerativeAI, ChatGoogleGenerativeAI
 from src.utils.schema import Schema
 from src.utils.template import Template
 from dotenv import load_dotenv
+from src.database.vector_store import VectorStore
 
 class Chaining():
     def __init__(self):
@@ -41,9 +42,9 @@ class Chaining():
         return response
 
     def chat_response(self,query):
-
+        db = VectorStore()
         template = self.template.chat_template()
         chain = template | self.chat_model
         response = chain.invoke({"query":query})
-
+        db.query_vector_store()
         return response.content
