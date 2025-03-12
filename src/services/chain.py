@@ -7,6 +7,7 @@ from src.database.vector_store import VectorStore
 class Chaining():
     def __init__(self):
         load_dotenv()
+        self.vector = VectorStore()
         self.template = Template()
         self.schema = Schema()
         self.extract_model = GoogleGenerativeAI(
@@ -42,9 +43,8 @@ class Chaining():
         return response
 
     def chat_response(self,query):
-        db = VectorStore()
+        context = self.vector.query_vector_store(query)
         template = self.template.chat_template()
         chain = template | self.chat_model
-        response = chain.invoke({"query":query})
-        db.query_vector_store()
+        response = chain.invoke({"query":query, "context": context})
         return response.content

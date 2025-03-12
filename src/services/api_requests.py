@@ -25,6 +25,29 @@ def upload_files(new_files, po_new_files,file_data):
     except Exception as e:
         return None
 
+def extract_files(upload_files):
+    try:
+        API_URL = os.getenv("API_URL")
+        
+        # Fix: Correctly format files
+        files = [("files", (file.name, file.file.read(), file.content_type)) for file in upload_files]
+
+        response = requests.post(f"{API_URL}/extract_files/", files=files)
+        
+        print(f"Status Code: {response.status_code}")  # Debugging
+        print(f"Response Text: {response.text}")  # Debugging
+
+        if response.status_code == 200:
+            extract_data = response.json()
+            return {pd.DataFrame(extract_data)}
+        else:
+            print(f"Error: {response.text}")  # Print API error response
+            return None
+    except Exception as e:
+        print(f"Error: {e}")  # Debugging
+        return None
+
+
 def chat_request(query,session_id):
     try:
         API_URL = os.getenv("API_URL")

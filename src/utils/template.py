@@ -25,7 +25,12 @@ class Template():
     def chat_template(self):
         return ChatPromptTemplate.from_messages(
             [
-                ("system", """Youre an Intelligent chatbot that answers users query based on the """),
+                ("system", """You are an intelligent assistant specialized in processing and answering queries related to invoices and purchase orders.  
+                Use the following context to provide accurate responses:  
+                {context}  
+                Don't response in a jason if the format needed to be a table then create a table based on the context.
+                If the query is unrelated to invoices or POs, politely inform the user that you can only assist with invoice-related queries.
+                """),
                 ("human", "{query}")
             ]
         )

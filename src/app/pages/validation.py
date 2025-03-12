@@ -119,7 +119,6 @@ def validation_page():
 
     save = st.button(label="Save")
 
-    
     if save:
         if st.session_state.df_invoices.empty and st.session_state.df_pos.empty:
             st.warning("No data to save!")

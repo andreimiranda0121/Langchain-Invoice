@@ -18,8 +18,15 @@ class VectorStore:
             index_name=vector_index
         )
     
-    def query_vector_store(self):
-        pass
+    def query_vector_store(self, query):
+        invoice_store = self.get_vector_store(self.collection_invoice, "vector_index_invoice")
+        po_store = self.get_vector_store(self.collection_po, "vector_index_po")
+        docs_invoice = invoice_store.similarity_search(query, k=1)
+        docs_pos = po_store.similarity_search(query, k=1)
+        context = " ".join([doc.page_content for doc in (docs_invoice + docs_pos)])
+
+        return context
+        
     #Check if a document with the same text already exists.
     def check_duplicate(self,collection, doc_text):
         existing_doc = collection.find_one({"text": json.dumps(doc_text)})

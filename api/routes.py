@@ -58,3 +58,14 @@ async def save_to_db(data: SaveRequest):
         "duplicate_pos": result["duplicate_pos"]["count"],
         "duplicate_pos_files": result["duplicate_pos"]["filenames"],
     }
+
+
+@router.post("/extract_files/")
+async def extract_file(files: List[UploadFile] = File(...)):
+
+    fp = FilePipeline()
+    extract_contents = [(file.filename, await file.read()) for file in files]
+
+    response = fp.create_docs(extract_contents)
+
+    return response
