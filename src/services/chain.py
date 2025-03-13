@@ -1,8 +1,12 @@
+import logging
 from langchain_google_genai import GoogleGenerativeAI, ChatGoogleGenerativeAI
 from src.utils.schema import Schema
 from src.utils.template import Template
 from dotenv import load_dotenv
 from src.database.vector_store import VectorStore
+from langchain_openai import ChatOpenAI
+
+logging.basicConfig(level=logging.DEBUG)
 
 class Chaining():
     def __init__(self):
@@ -14,16 +18,17 @@ class Chaining():
             model="gemini-2.0-flash",
             temperature=0.3
         )
-        self.chat_model = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash"
+        self.chat_model = ChatOpenAI(
+            model="gpt-4o"
         )
 
     def estimate_tokens(self, text):
         """Estimate token count using character length (approx 1 token = 4 chars)."""
         return len(text) // 4
 
-    def response(self, file_data):
-        parser = self.schema.create_schema()
+    def response(self, file_data, company_name):
+        parser = self.schema.create_schema(company_name)
+        print(parser)
         template = self.template.extract_template()
         chain = template | self.extract_model | parser
 
@@ -38,7 +43,7 @@ class Chaining():
         print(f"Estimated Input Tokens: {input_tokens}")
         print(f"Estimated Output Tokens: {output_tokens}")
         print(f"Estimated Total Tokens: {total_tokens}")
-        print(response)
+        logging.debug(f"Response: {response}")
 
         return response
 

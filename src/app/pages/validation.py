@@ -4,9 +4,15 @@ from src.utils.helpers import hash_file
 from src.services.api_requests import upload_files
 from src.services.api_requests import save_to_db
 
-def validation_page():
-    st.title("Invoice and PO Extraction")
+# Function to reset session state when the company selection changes
+def reset_data():
+    st.session_state.processed_files = {}  
+    st.session_state.po_processed_files = {}
+    st.session_state.df_invoices = pd.DataFrame()  
+    st.session_state.df_pos = pd.DataFrame()
 
+def validation_page():
+    
     # Initialize session state
     if "processed_files" not in st.session_state:
         st.session_state.processed_files = {}  
@@ -18,7 +24,12 @@ def validation_page():
         st.session_state.df_pos = pd.DataFrame()  
 
     company_list = ["Company A", "Company B", "Company C"]
-    st.selectbox(label="List of Company",options=company_list, key="company")
+    st.selectbox(
+        label="List of Company",
+        options=company_list,
+        key="company",
+        on_change=reset_data  # 🔹 Reset data when a new company is selected
+    )
     
     col1, col2 = st.columns(2)
     with col1:
@@ -64,7 +75,7 @@ def validation_page():
     
     if submit and new_files and po_new_files:
         with st.spinner("Extracting..."):
-            response = upload_files(new_files, po_new_files, file_data)  # API call
+            response = upload_files(new_files, po_new_files, file_data, st.session_state.company)  # API call
 
             if response and "invoices" in response and "pos" in response:
                 print(type(response["invoices"]))
@@ -120,31 +131,32 @@ def validation_page():
     save = st.button(label="Save")
 
     if save:
-        if st.session_state.df_invoices.empty and st.session_state.df_pos.empty:
-            st.warning("No data to save!")
-        else:
-            response = save_to_db(st.session_state.df_invoices, st.session_state.df_pos)
-            if "error" in response:
-                st.error(response["error"])
+        with st.spinner("Saving..."):
+            if st.session_state.df_invoices.empty and st.session_state.df_pos.empty:
+                st.warning("No data to save!")
             else:
-                st.success(f"✅ {response['new_vectorized_invoices']} invoices saved, {response['new_vectorized_pos']} POs saved")
+                response = save_to_db(st.session_state.df_invoices, st.session_state.df_pos)
+                if "error" in response:
+                    st.error(response["error"])
+                else:
+                    st.success(f"✅ {response['new_vectorized_invoices']} invoices saved, {response['new_vectorized_pos']} POs saved")
 
-                # Show warnings if duplicates exist
-                if response["duplicate_invoices"] > 0 or response["duplicate_pos"] > 0:
-                    st.warning(
-                        f"⚠️ {response['duplicate_invoices']} invoices and {response['duplicate_pos']} POs were duplicates and not saved."
-                    )
+                    # Show warnings if duplicates exist
+                    if response["duplicate_invoices"] > 0 or response["duplicate_pos"] > 0:
+                        st.warning(
+                            f"⚠️ {response['duplicate_invoices']} invoices and {response['duplicate_pos']} POs were duplicates and not saved."
+                        )
 
-                    # Display filenames of duplicate invoices
-                    if response["duplicate_invoice_files"]:
-                        st.write("📝 **Duplicate Invoice Files:**")
-                        for filename in response["duplicate_invoice_files"]:
-                            st.write(f"- {filename}")
+                        # Display filenames of duplicate invoices
+                        if response["duplicate_invoice_files"]:
+                            st.write("📝 **Duplicate Invoice Files:**")
+                            for filename in response["duplicate_invoice_files"]:
+                                st.write(f"- {filename}")
 
-                    # Display filenames of duplicate POs
-                    if response["duplicate_pos_files"]:
-                        st.write("📌 **Duplicate PO Files:**")
-                        for filename in response["duplicate_pos_files"]:
-                            st.write(f"- {filename}")
+                        # Display filenames of duplicate POs
+                        if response["duplicate_pos_files"]:
+                            st.write("📌 **Duplicate PO Files:**")
+                            for filename in response["duplicate_pos_files"]:
+                                st.write(f"- {filename}")
 
 

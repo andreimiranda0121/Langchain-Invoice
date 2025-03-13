@@ -1,5 +1,4 @@
 from .connection import collection
-#from src.utils.helpers import check_duplicate
 from langchain_community.vectorstores import MongoDBAtlasVectorSearch
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import json
@@ -27,14 +26,17 @@ class VectorStore:
 
         return context
         
-    #Check if a document with the same text already exists.
-    def check_duplicate(self,collection, doc_text):
+    # Check if a document with the same text already exists.
+    def check_duplicate(self, collection, doc_text):
         existing_doc = collection.find_one({"text": json.dumps(doc_text)})
         return existing_doc is not None  # Returns True if duplicate exists
 
-    def create_vector_store(self, invoice_docs, po_docs):
+    def create_vector_store(self, invoice_docs=None, po_docs=None):
         invoice_store = self.get_vector_store(self.collection_invoice, "vector_index_invoice")
         po_store = self.get_vector_store(self.collection_po, "vector_index_po")
+
+        print(f"Invoice Docs: {invoice_docs}")
+        print(f"PO DOCS: {po_docs}")
 
         new_invoices = []
         duplicate_invoices = []
@@ -44,14 +46,18 @@ class VectorStore:
         # Check for duplicate invoices before adding
         for doc in invoice_docs:
             if self.check_duplicate(self.collection_invoice, doc):
-                duplicate_invoices.append(doc["filename"])  # Store filename of duplicate
+                filename = doc.get("filename", "Unknown Filename")  # Avoid KeyError
+                duplicate_invoices.append(filename)
+                print(f"Duplicate Invoice Found: {filename}")
             else:
                 new_invoices.append(doc)
 
         # Check for duplicate POs before adding
         for doc in po_docs:
             if self.check_duplicate(self.collection_po, doc):
-                duplicate_pos.append(doc["filename"])  # Store filename of duplicate
+                filename = doc.get("filename", "Unknown Filename")  # Avoid KeyError
+                duplicate_pos.append(filename)
+                print(f"Duplicate PO Found: {filename}")
             else:
                 new_pos.append(doc)
 
@@ -81,5 +87,3 @@ class VectorStore:
                 "filenames": duplicate_pos
             }
         }
-
-

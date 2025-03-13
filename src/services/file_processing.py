@@ -4,16 +4,17 @@ import re
 import json
 import xml.etree.ElementTree as ET
 from pypdf import PdfReader
-from .chain import Chaining
 from PIL import Image
-
+from .chain import Chaining
+from src.utils.dataframe import DataFrame
+from src.utils.schema import Schema  # Import schema dynamically
+import numpy as np
 
 class FilePipeline:
     def __init__(self):
         self.chain = Chaining()
 
     def get_pdf_text(self, pdf_bytes):
-        """Extract text from a PDF file (using bytes)."""
         text = ""
         pdf_reader = PdfReader(io.BytesIO(pdf_bytes))  
         for page in pdf_reader.pages:
@@ -21,7 +22,6 @@ class FilePipeline:
         return text
 
     def extract_text_from_xml(self, file_bytes):
-        """Extract structured text from an XML file."""
         try:
             tree = ET.ElementTree(ET.fromstring(file_bytes.decode("utf-8")))
             root = tree.getroot()
@@ -33,21 +33,17 @@ class FilePipeline:
 
     def extract_text_from_image(self, file_bytes):
         image = Image.open(io.BytesIO(file_bytes))
-        text = image
+        text = image  # Replace this with OCR processing if needed
         return text
 
     def clean_number(self, value):
         if not value or str(value).strip() == "":
             return 0.0  
 
-        # Remove all non-numeric characters except dots and commas
-        cleaned_value = re.sub(r"[^\d.,]", "", value)
+        cleaned_value = re.sub(r"[^\d.,]", "", value)  # Remove non-numeric characters
 
-        # If both comma and dot exist, assume comma is the thousand separator and remove it
         if "," in cleaned_value and "." in cleaned_value:
-            cleaned_value = cleaned_value.replace(",", "") 
-
-        # If only comma exists, assume it's a decimal separator and convert it to dot
+            cleaned_value = cleaned_value.replace(",", "")  # Assume comma is a thousand separator
         elif "," in cleaned_value and "." not in cleaned_value:
             cleaned_value = cleaned_value.replace(",", ".")
 
@@ -56,26 +52,23 @@ class FilePipeline:
         except ValueError:
             print(f"Conversion Error: {value} -> {cleaned_value}")
         return 0.0
+    
+    def convert_numpy_types(self,data):
+        """Convert numpy data types to native Python types"""
+        if isinstance(data, np.integer):
+            return int(data)
+        elif isinstance(data, np.floating):
+            return float(data)
+        elif isinstance(data, dict):
+            return {k: self.convert_numpy_types(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self.convert_numpy_types(i) for i in data]
+        return data
+    
+    def create_docs(self, file_contents, company_name):
 
-    def create_docs(self, file_contents):
-        """Process uploaded invoices and extract structured data."""
-
-        #Create a standardized DataFrame matching schema.py keys
-        df = pd.DataFrame(
-            {
-                "invoice_no": pd.Series(dtype="str"),
-                "po_no": pd.Series(dtype="str"),
-                "description": pd.Series(dtype="str"),
-                "quantity": pd.Series(dtype="str"),  # 🔹 Keep as string to prevent conversion errors
-                "date": pd.Series(dtype="str"),
-                "unit_price": pd.Series(dtype="float"),
-                "amount": pd.Series(dtype="float"),
-                "total": pd.Series(dtype="float"),
-                "email": pd.Series(dtype="str"),
-                "phone_number": pd.Series(dtype="str"),
-                "address": pd.Series(dtype="str"),
-            }
-        )
+        df = DataFrame.select_dataframe(company_name)  # Get company-specific DataFrame
+        extracted_data_list = []  # Store extracted data before creating a DataFrame
 
         for filename, file_bytes in file_contents:
             raw_data = ""
@@ -95,48 +88,21 @@ class FilePipeline:
                 print(f"Skipping invalid file: {filename}")
                 continue
 
-            #Call LLM to extract structured invoice data
-            llm_extracted_data = self.chain.response(raw_data)
+            # Call LLM to extract structured invoice data
+            llm_extracted_data = self.chain.response(raw_data, company_name)
 
-            # extract the data properly
-            if hasattr(llm_extracted_data, "items"):  
-                llm_extracted_data = llm_extracted_data.items  # Extract the actual list
-
-            if not isinstance(llm_extracted_data, list):
-                print(f"Unexpected LLM output format: {type(llm_extracted_data)}")
+            if not llm_extracted_data:
+                print(f"Skipping file due to extraction failure: {filename}")
                 continue
 
-            #Convert extracted items to dictionaries before adding to DataFrame
-            standardized_data = []
-            for entry in llm_extracted_data:
-                if hasattr(entry, "__dict__"): 
-                    entry_dict = entry.__dict__
-                else:
-                    entry_dict = entry  # Already a dictionary
+            # Convert extracted Pydantic model data into a list of dictionaries
+            extracted_data_list.extend([self.convert_numpy_types(item.dict()) for item in llm_extracted_data.items])
 
-                try:
-                    standardized_entry = {
-                        "invoice_no": entry_dict.get("invoice_no", ""),
-                        "po_no": entry_dict.get("po_no", ""),
-                        "description": entry_dict.get("description", ""),
-                        "quantity": str(entry_dict.get("quantity", "0")), 
-                        "date": entry_dict.get("date", ""),
-                        "unit_price": self.clean_number(entry_dict.get("unit_price", "0")), 
-                        "amount": self.clean_number(entry_dict.get("amount", "0")),  
-                        "total": self.clean_number(entry_dict.get("total", "0")),
-                        "email": entry_dict.get("email", ""),
-                        "phone_number": entry_dict.get("phone_number", ""),
-                        "address": entry_dict.get("address", ""),
-                        "filename": filename
-                    }
-                    standardized_data.append(standardized_entry)
-                except ValueError as e:
-                    print(f"Data Conversion Error: {e}")
+        # Append extracted data to the DataFrame
+        if extracted_data_list:
+            extracted_df = pd.DataFrame.from_records(extracted_data_list)
 
-            if standardized_data:
-                df_new = pd.DataFrame(standardized_data)  
-                df = pd.concat([df, df_new], ignore_index=True)  
-            else:
-                print("No structured data extracted.")
+            # Ensure the extracted DataFrame columns match the selected company schema
+            df = pd.concat([df, extracted_df], ignore_index=True)
 
         return df.fillna("")  # Fill missing values with empty strings

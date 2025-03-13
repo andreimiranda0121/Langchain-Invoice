@@ -12,6 +12,7 @@ class Template():
 
             **Important Instructions:**
             - If an item has both `Quantity = 0` and `Amount = 0`, **DO NOT include it** in the output.
+            - If the value is Null just return an empty string
             - Ensure that the extracted items are in JSON format.
             - Return all extracted items as a **list of dictionaries**.
             - Make all of the date format like this YYYY-MM-DD
